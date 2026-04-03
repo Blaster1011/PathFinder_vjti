@@ -1,0 +1,165 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PathFinder VJTI — Career Architect</title>
+  <meta name="description" content="AI-free, logic-driven career guidance for VJTI Computer Engineering students. Know your internship readiness score in 60 seconds.">
+  <link rel="stylesheet" href="{% static 'career/style.css' %}">
+  <style>
+    /* Spinner for submit */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,.4);
+      border-top-color: white; border-radius: 50%;
+      animation: spin .7s linear infinite;
+      vertical-align: middle; margin-right: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Navbar ── -->
+<nav class="navbar">
+  <div class="navbar-brand">
+    <div class="logo-icon">🧭</div>
+    <span class="gradient-text">PathFinder VJTI</span>
+  </div>
+  <span class="navbar-badge">Logic-Driven · Zero LLM</span>
+</nav>
+
+<!-- ── Hero ── -->
+<section class="hero">
+  <div class="hero-badge">✨ Deterministic Intelligence · CodeWiser Hackathon 2025</div>
+  <h1>
+    Your <span class="gradient-text">Career Roadmap</span><br>
+    Built by Logic, Not Luck
+  </h1>
+  <p>
+    Enter your stats and let the <strong>CareerLogicEngine</strong> calculate your
+    internship readiness score, benchmark you against 50 VJTI peers, and generate
+    a step-by-step roadmap — all without a single AI call.
+  </p>
+
+  <div class="hero-stats">
+    <span class="stat-pill"><span class="dot dot-purple"></span>Weighted Scoring Engine</span>
+    <span class="stat-pill"><span class="dot dot-cyan"></span>Decision Tree Diagnostics</span>
+    <span class="stat-pill"><span class="dot dot-green"></span>Peer Percentile Ranking</span>
+    <span class="stat-pill"><span class="dot dot-pink"></span>Logic Trace Explainability</span>
+  </div>
+</section>
+
+<!-- ── Profile Form ── -->
+<main class="form-wrap">
+  <div class="card card-gradient">
+    <p class="form-section-label" style="margin-bottom:.3rem;">Step 1 of 1</p>
+    <h2 class="form-title">Build Your Profile</h2>
+    <p class="form-subtitle">All fields are used in the scoring formula — be honest for the best results.</p>
+
+    <form id="profileForm" method="POST" action="{% url 'analyze' %}">
+      {% csrf_token %}
+
+      <!-- Basic Info -->
+      <div class="form-section">
+        <div class="form-section-label">Basic Info</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="name">Your Name</label>
+            <input type="text" id="name" name="name" placeholder="e.g. Omkar Chauhan" required>
+          </div>
+          <div class="form-group">
+            <label for="year">Academic Year</label>
+            <select id="year" name="year" required>
+              <option value="1">1st Year</option>
+              <option value="2" selected>2nd Year</option>
+              <option value="3">3rd Year</option>
+              <option value="4">4th Year</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interest -->
+      <div class="form-section">
+        <div class="form-section-label">Primary Interest</div>
+        <div class="interest-grid">
+          <label class="interest-card">
+            <input type="radio" name="interest" value="AppDev" checked>
+            <span class="interest-label">
+              <span class="emoji">📱</span>
+              App Development
+            </span>
+          </label>
+          <label class="interest-card">
+            <input type="radio" name="interest" value="WebDev">
+            <span class="interest-label">
+              <span class="emoji">🌐</span>
+              Web Development
+            </span>
+          </label>
+          <label class="interest-card">
+            <input type="radio" name="interest" value="CP">
+            <span class="interest-label">
+              <span class="emoji">⚔️</span>
+              Competitive Programming
+            </span>
+          </label>
+          <label class="interest-card">
+            <input type="radio" name="interest" value="AI">
+            <span class="interest-label">
+              <span class="emoji">🤖</span>
+              AI / Machine Learning
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="form-section">
+        <div class="form-section-label">Quantitative Stats</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="leetcode">LeetCode Problems Solved</label>
+            <input type="number" id="leetcode" name="leetcode" min="0" max="3000"
+                   placeholder="e.g. 350" value="350" required>
+          </div>
+          <div class="form-group">
+            <label for="cf_rating">Codeforces Rating <span style="color:var(--text-muted)">(0 if none)</span></label>
+            <input type="number" id="cf_rating" name="cf_rating" min="0" max="4000"
+                   placeholder="e.g. 1200" value="0" required>
+          </div>
+          <div class="form-group">
+            <label for="github_repos">GitHub Repositories</label>
+            <input type="number" id="github_repos" name="github_repos" min="0" max="500"
+                   placeholder="e.g. 8" value="8" required>
+          </div>
+          <div class="form-group">
+            <label for="flutter_projects">Flutter Projects <span style="color:var(--text-muted)">(App Dev only)</span></label>
+            <input type="number" id="flutter_projects" name="flutter_projects" min="0" max="20"
+                   placeholder="e.g. 2" value="0" required>
+          </div>
+        </div>
+      </div>
+
+      <!-- Projects -->
+      <div class="form-section">
+        <div class="form-section-label">Project Portfolio</div>
+        <div class="form-group full">
+          <label for="projects">Project Names <span style="color:var(--text-muted)">(comma-separated)</span></label>
+          <textarea id="projects" name="projects" rows="3"
+            placeholder="e.g. Women's Safety App, Sign Language Detection, Campus Bus Tracker"></textarea>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit" id="submitBtn">
+        🚀 &nbsp; Analyze My Career Readiness
+      </button>
+    </form>
+  </div>
+</main>
+
+<script src="{% static 'career/app.js' %}"></script>
+</body>
+</html>

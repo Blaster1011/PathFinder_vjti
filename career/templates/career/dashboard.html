@@ -1,0 +1,237 @@
+{% load static %}
+{% load career_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PathFinder VJTI — {{ profile.name }}'s Dashboard</title>
+  <meta name="description" content="Career readiness score: {{ readiness.score }}/100 for {{ profile.name }}. {{ diagnosis.state }} state. Peer rank: Top {{ ranking.top_percent }}%.">
+  <link rel="stylesheet" href="{% static 'career/style.css' %}">
+</head>
+<body>
+
+<!-- ── Navbar ── -->
+<nav class="navbar">
+  <div class="navbar-brand">
+    <div class="logo-icon">🧭</div>
+    <span class="gradient-text">PathFinder VJTI</span>
+  </div>
+  <span class="navbar-badge">Logic-Driven · Zero LLM</span>
+</nav>
+
+<!-- ── Dashboard ── -->
+<div class="dashboard">
+
+  <!-- Header -->
+  <div class="dash-header">
+    <div>
+      <div class="dash-greeting">
+        {{ diagnosis.emoji }} Hey, {{ profile.name }}!
+      </div>
+      <div class="dash-sub">
+        Year {{ profile.year }} · {{ interest_labels|get_item:profile.interest }} · {{ profile.projects|length }} project{{ profile.projects|length|pluralize }}
+      </div>
+    </div>
+    <a href="{% url 'index' %}" class="btn-back">← Reanalyze</a>
+  </div>
+
+  <!-- Main 2-col grid -->
+  <div class="dash-grid">
+
+    <!-- ─── LEFT COLUMN ─── -->
+    <div class="dash-left">
+
+      <!-- Gauge Card -->
+      <div class="card gauge-card">
+        <div class="gauge-wrap">
+          <canvas id="gaugeCanvas" data-score="{{ score_int }}"></canvas>
+          <div class="gauge-center">
+            <div class="gauge-score gradient-text" id="gaugeScore">0</div>
+            <div class="gauge-label">/ 100</div>
+          </div>
+        </div>
+
+        <div class="state-badge {{ diagnosis.color }}">
+          {{ diagnosis.emoji }} {{ diagnosis.state }}
+        </div>
+
+        <p class="rule-text">{{ diagnosis.rule }}</p>
+      </div>
+
+      <!-- Mini stat cards -->
+      <div class="stat-row">
+        <div class="stat-mini">
+          <div class="stat-mini-value" style="color:var(--cyan-400)">{{ profile.leetcode }}</div>
+          <div class="stat-mini-label">LeetCode</div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-mini-value" style="color:var(--purple-400)">{{ profile.cf_rating }}</div>
+          <div class="stat-mini-label">CF Rating</div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-mini-value" style="color:var(--green-400)">{{ profile.github_repos }}</div>
+          <div class="stat-mini-label">GitHub Repos</div>
+        </div>
+        <div class="stat-mini">
+          <div class="stat-mini-value" style="color:var(--pink-400)">{{ profile.projects|length }}</div>
+          <div class="stat-mini-label">Projects</div>
+        </div>
+      </div>
+
+      <!-- Peer Rank Banner -->
+      <div class="card rank-card">
+        <div class="rank-percent gradient-text">Top {{ ranking.top_percent }}%</div>
+        <div class="rank-label">of all VJTI CE peers</div>
+        <div class="rank-detail">
+          You outrank <strong>{{ ranking.peers_beaten }}</strong> of {{ ranking.peers_total }} mock students.
+          Cohort rank: <strong>#{{ ranking.cohort_rank }}</strong> of {{ ranking.cohort_total }}
+          (Year {{ profile.year }} {{ interest_labels|get_item:profile.interest }}).
+        </div>
+      </div>
+
+    </div><!-- /dash-left -->
+
+    <!-- ─── RIGHT COLUMN ─── -->
+    <div class="dash-right">
+
+      <!-- Logic Trace Panel (20-point judging rubric) -->
+      <div class="card trace-card">
+        <div class="card-header">
+          <h3>🔬 Logic Trace</h3>
+          <span class="tag">Explainability Engine</span>
+        </div>
+
+        <!-- Weight table -->
+        <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:.8rem;">
+          Interest detected: <strong style="color:var(--purple-400)">{{ interest_labels|get_item:profile.interest }}</strong>.
+          The engine applied the following interest-specific weights to your normalized stats:
+        </p>
+
+        <table class="weight-table">
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Raw Value</th>
+              <th>Weight</th>
+              <th>Contribution</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for label, contrib in readiness.component_scores.items %}
+            <tr>
+              <td style="color:var(--text-primary);font-weight:600;">{{ label }}</td>
+              <td>
+                {% if label == "LeetCode" %}{{ profile.leetcode }}
+                {% elif label == "CF Rating" %}{{ profile.cf_rating }}
+                {% elif label == "GitHub Repos" %}{{ profile.github_repos }}
+                {% elif label == "Projects" %}{{ profile.projects|length }}
+                {% elif label == "Flutter Bonus" %}{{ profile.flutter_projects }}
+                {% endif %}
+              </td>
+              <td style="color:var(--yellow-400);">
+                {% if label == "LeetCode" %}{{ weights.leetcode }}
+                {% elif label == "CF Rating" %}{{ weights.cf_rating }}
+                {% elif label == "GitHub Repos" %}{{ weights.github_repos }}
+                {% elif label == "Projects" %}{{ weights.projects }}
+                {% elif label == "Flutter Bonus" %}{{ weights.flutter_bonus }}
+                {% endif %}
+              </td>
+              <td>
+                <div class="contrib-bar">
+                  <div class="bar-track">
+                    <div class="bar-fill" data-width="{{ contrib }}" style="width:0%"></div>
+                  </div>
+                  <span class="bar-val">{{ contrib }}</span>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <!-- Step-by-step math -->
+        <div class="formula-box">
+          <div class="formula-label">Step-by-step calculation</div>
+          <div class="formula-val">
+            {% for part in readiness.trace_parts %}
+              {{ part }}<br>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Final formula -->
+        <div class="formula-box">
+          <div class="formula-label">Final Formula</div>
+          <div class="formula-val" style="color:var(--purple-400);font-size:.9rem;">
+            Score&nbsp;=&nbsp;{{ readiness.formula_summary }}
+          </div>
+        </div>
+
+        <!-- Rule that fired -->
+        <div class="formula-box" style="border-color:rgba(139,92,246,.30);">
+          <div class="formula-label">Decision Tree — Rule Triggered</div>
+          <div class="formula-val" style="color:var(--cyan-400);">{{ diagnosis.rule }}</div>
+        </div>
+
+      </div><!-- /trace-card -->
+
+      <!-- Roadmap -->
+      <div class="card roadmap-card">
+        <div class="card-header">
+          <h3>🗺️ Your Personalized Roadmap</h3>
+          <span class="tag">State Machine</span>
+        </div>
+        <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem;">
+          Generated by the state machine for state <strong style="color:var(--purple-400);">{{ diagnosis.state }}</strong>
+          — every step is a direct consequence of your input stats.
+        </p>
+        <ol class="roadmap-list">
+          {% for step in roadmap %}
+          <li class="roadmap-item" style="animation-delay:{{ forloop.counter0 }}00ms">
+            <span class="roadmap-num">{{ forloop.counter }}</span>
+            <span class="roadmap-text">{{ step }}</span>
+          </li>
+          {% endfor %}
+        </ol>
+      </div>
+
+      <!-- Leaderboard -->
+      <div class="card">
+        <div class="card-header">
+          <h3>🏆 Peer Leaderboard</h3>
+          <span class="tag">Top 10 Mock Students</span>
+        </div>
+        <div class="leader-list">
+          {% for peer in ranking.leaderboard %}
+          <div class="leader-item">
+            <span class="leader-rank {% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">
+              {{ forloop.counter }}
+            </span>
+            <span class="leader-name">{{ peer.name }}</span>
+            <div class="leader-bar">
+              <div class="leader-bar-fill" data-width="{{ peer.score }}" style="width:0%"></div>
+            </div>
+            <span class="leader-score">{{ peer.score }}</span>
+          </div>
+          {% endfor %}
+
+          <!-- User row (highlighted) -->
+          <div class="leader-item" style="background:rgba(139,92,246,.10);border:1px solid rgba(139,92,246,.25);border-radius:8px;margin-top:.25rem;">
+            <span class="leader-rank" style="color:var(--purple-400);">YOU</span>
+            <span class="leader-name" style="color:var(--text-primary);font-weight:700;">{{ profile.name }}</span>
+            <div class="leader-bar">
+              <div class="leader-bar-fill" data-width="{{ score_int }}" style="width:0%"></div>
+            </div>
+            <span class="leader-score" style="color:var(--purple-400);">{{ readiness.score }}</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /dash-right -->
+  </div><!-- /dash-grid -->
+</div><!-- /dashboard -->
+
+<script src="{% static 'career/app.js' %}"></script>
+</body>
+</html>
